@@ -15,13 +15,12 @@ let RIGHT_SWIPE = 4;
 let UP_SWIPE = 8;
 let DOWN_SWIPE = 16;
 
-let WELCOME = 0;
 let RUNNING = 1;
 let GAME_OVER = 2;
 let PAUSE = 3;
 
-let NWIDTH = 10;
-let NHEIGHT = 20;
+let NWIDTH;
+let NHEIGHT;
 
 let blockSize;
 
@@ -50,6 +49,10 @@ function setup() {
 
   frameRate(10);
 
+  // number of blocks
+  NWIDTH = 10;
+  NHEIGHT = NWIDTH * 2;
+
   createCanvas(windowWidth, windowHeight);
   computeCanvas();
   
@@ -58,6 +61,7 @@ function setup() {
   startGame();
 
 }
+
 function windowResized() {
 
   resizeCanvas(windowWidth, windowHeight);
@@ -67,7 +71,7 @@ function windowResized() {
 
 function computeCanvas() {
 
-  blockSize =  min(width, height) / max(NWIDTH, NHEIGHT)
+  blockSize =  min(width, height) / max(NWIDTH, NHEIGHT);
 
   xOffCanvas = - NWIDTH * blockSize / 2;
   yOffCanvas = - NHEIGHT * blockSize / 2;
@@ -77,7 +81,7 @@ function computeCanvas() {
 function displayMessage(message) {
   fill(0, 150);
   stroke(0, 150);
-  strokeWeight(4);
+  strokeWeight(3);
   rect(-width / 2, -height / 2, width, height);
 
   noStroke();
@@ -85,13 +89,16 @@ function displayMessage(message) {
   textAlign(CENTER);
 
   textSize(60);
-  text(message,0, map(0.45, 0, 1, -height / 2, height / 2));
+  text(message,0, map(0.35, 0, 1, -height / 2, height / 2));
 
   textSize(30);
   text(gamePoints + " points", 0, map(0.55, 0, 1, -height / 2, height / 2));
 
+  let msg1 = '<p> or <long press> to continue';
+  let msg2 = '<r> or <device shake> to toggle screen rotation';
+  
   textSize(20);
-  text('<p> to continue\n<r> to stop screen rotation', 0, map(0.85, 0, 1, -height / 2, height / 2));
+  text(msg1 + '\n' + msg2, 0, map(0.85, 0, 1, -height / 2, height / 2));
 
 }
 
@@ -103,7 +110,7 @@ function drawGame() {
 
   // background blocks
   stroke(50);
-  strokeWeight(4);
+  strokeWeight(3);
   for (let x = 0; x < NWIDTH; x++) {
     for (let y = 0; y < NHEIGHT; y++) {
       fill(matrixBackground[x][y]);
@@ -114,7 +121,7 @@ function drawGame() {
   // background border
   noFill();
   stroke(200);
-  strokeWeight(4);
+  strokeWeight(3);
   rect(xOffCanvas, yOffCanvas, blockSize * NWIDTH, blockSize * NHEIGHT);
 
   // draw shadow
@@ -140,7 +147,7 @@ function drawGame() {
 
       if (blockType >= I && blockType <= S) {
         fill(getColor(blockType));
-        strokeWeight(4);
+        strokeWeight(3);
         stroke(200);
         rect(xOffCanvas + x * blockSize, yOffCanvas + y * blockSize, blockSize, blockSize);
       }
@@ -151,17 +158,23 @@ function drawGame() {
   // draw next block
   let xNext = getBlockX(typeNext);
   let yNext = getBlockY(typeNext);
+  let blockSizeNext = blockSize * 0.5;
   fill(getColor(typeNext));
   for (let i = 0; i < 4; i ++) {
-    strokeWeight(4);
+    strokeWeight(2);
     stroke(200);
-    rect(xOffCanvas + (NWIDTH + 1 + xNext[i]) * blockSize, yOffCanvas + (yNext[i]) * blockSize, blockSize, blockSize);
-    //rect(xNext[i] * blockSize - width / 2, yNext[i] * blockSize - height / 2, blockSize, blockSize);
+    let xOff = xOffCanvas + blockSizeNext;
+    let yOff = yOffCanvas + blockSizeNext;
+
+    rect(xOff + xNext[i] * blockSizeNext,
+      yOff + yNext[i] * blockSizeNext,
+      blockSizeNext,
+      blockSizeNext);
   }
 
   pop();
   // finish screen rotation
- 
+
 }
 
 function draw() {
@@ -172,9 +185,7 @@ function draw() {
 
   drawGame();
 
-  if (gameState == WELCOME) {
-
-  } else if (gameState == RUNNING) {
+  if (gameState == RUNNING) {
     updateGame();
   }
   else if (gameState == PAUSE) {
@@ -194,6 +205,7 @@ function getColor(blockType) {
   else if (blockType == Z) { return 'red';    }
   else if (blockType == S) { return 'green';  }
   else { return false; }
+
 }
 
 function startGame() {
@@ -202,7 +214,7 @@ function startGame() {
   gameOrientation = 0;
   gamePoints = 0;
 
-  allowScreenRotation = true;
+  allowScreenRotation = false;
 
   lineCount = 0;
   timeDelayInSeconds = 1.0;
@@ -238,6 +250,7 @@ function getBlockX(blockType) {
   if (blockType == S) { x = [1, 2, 0, 1]; }
 
   return x;
+
 }
 
 function getBlockY(blockType) {
@@ -252,6 +265,7 @@ function getBlockY(blockType) {
   if (blockType == S) { y = [0, 0, 1, 1]; }
 
   return y;
+
 }
 
 function createBlock() {
@@ -357,7 +371,6 @@ function moveWithOffset(xOff, yOff, rotationMode) {
   }
 
 }
-
 
 function turn() {
 
@@ -530,7 +543,7 @@ function setupGestures() {
 
   hammer.on('swipe tap press', onGesture);
   hammer.get('swipe').set({ direction: Hammer.DIRECTION_ALL });
-  hammer.get('tap').set({ taps: 2 });
+  hammer.get('tap').set({ taps: 1 });
 
 }
 
@@ -569,4 +582,10 @@ function onGesture(event) {
     changeGameState();
 
   }
+}
+
+function deviceShaken() {
+
+  toggleScreenRotation();
+
 }
