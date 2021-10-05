@@ -1,14 +1,81 @@
 <!DOCTYPE html>
 <html lang="">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tetris</title>
-    <style>body { margin:0; padding:0; overflow: hidden; }, canvas { margin:auto; }</style>
-    <script src="https://cdn.jsdelivr.net/npm/p5@0.10.2/lib/p5.min.js"></script>
-    <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
-    <script src="sketch.js"></script>
-  </head>
-  <body>
-  </body>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Optical Rings</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    canvas {
+      margin: auto;
+    }
+
+    .ray-slider {
+      -webkit-appearance: none;
+      background-color: transparent;
+      padding: 0;
+      font: inherit;
+      outline: none;
+      color: #ff0000;
+      opacity: .8;
+      background: #CCC;
+      box-sizing: border-box;
+      transition: opacity .2s;
+      cursor: pointer;
+    }
+
+    /* Styles the whole slider */
+    .ray-slider {
+      width: 80px;
+      background-color: transparent;
+      -webkit-appearance: none;
+    }
+
+    .ray-slider:focus {
+      outline: none;
+    }
+
+    .ray-slider::-webkit-slider-runnable-track {
+      background: #f0f0f0;
+      height: 10px;
+      -webkit-appearance: none;
+      cursor: pointer;
+
+    }
+
+    .ray-slider::-webkit-slider-thumb {
+      width: 15px;
+      height: 15px;
+      /* background: #5500cc; */
+      cursor: pointer;
+      -webkit-appearance: none;
+      margin-top: -3px;
+      border-radius: 8px;
+    }
+
+    .slider-red::-webkit-slider-thumb {
+      background: #ff0000;
+    }
+
+    .slider-green::-webkit-slider-thumb {
+      background: #00ff00;
+    }
+
+    .slider-blue::-webkit-slider-thumb {
+      background: #0000ff;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/p5@0.10.2/lib/p5.min.js"></script>
+  <script src="sketch.js"></script>
+</head>
+
+<body>
+</body>
+
 </html>

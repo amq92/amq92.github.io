@@ -1,591 +1,145 @@
-let I = 1;
-let O = 2;
-let T = 3;
-let L = 4;
-let J = 5;
-let Z = 6;
-let S = 7;
-
-let LEFT = 0;
-let DOWN = 1;
-let RIGHT = 2;
-
-let LEFT_SWIPE = 2;
-let RIGHT_SWIPE = 4;
-let UP_SWIPE = 8;
-let DOWN_SWIPE = 16;
-
-let RUNNING = 1;
-let GAME_OVER = 2;
-let PAUSE = 3;
-
-let NWIDTH;
-let NHEIGHT;
-
-let blockSize;
-
-let xOffCanvas;
-let yOffCanvas;
-
-let matrix = [];
-let matrixBackground = [];
-
-let type;
-let typeNext;
-
-let count;
-let countOld;
-
-let lineCount;
-let timeDelayInSeconds;
-
-let gameState;
-let gameOrientation;
-let gamePoints;
-
-let allowScreenRotation;
+let shapePoints = [];
+let ringSliders = [];
+let raySliders = [];
+let rayColors = ['red', 'green', 'blue'];
+let ringRadius = 200;
+let focalLength = 50;
+let ringWidth = 8;
+let dotSize = 18;
+let lineWidth = 6;
 
 function setup() {
 
-  frameRate(10);
+    createCanvas(windowWidth, windowHeight);
+    textSize(28);
 
-  // number of blocks
-  NWIDTH = 10;
-  NHEIGHT = NWIDTH * 2;
-
-  createCanvas(windowWidth, windowHeight);
-  computeCanvas();
-  
-  setupGestures();
-  
-  startGame();
-
-}
-
-function windowResized() {
-
-  resizeCanvas(windowWidth, windowHeight);
-  computeCanvas()
-
-}
-
-function computeCanvas() {
-
-  blockSize =  min(width, height) / max(NWIDTH, NHEIGHT);
-
-  xOffCanvas = - NWIDTH * blockSize / 2;
-  yOffCanvas = - NHEIGHT * blockSize / 2;
-
-}
-
-function displayMessage(message) {
-  fill(0, 150);
-  stroke(0, 150);
-  strokeWeight(3);
-  rect(-width / 2, -height / 2, width, height);
-
-  noStroke();
-  fill('white');
-  textAlign(CENTER);
-
-  textSize(60);
-  text(message,0, map(0.35, 0, 1, -height / 2, height / 2));
-
-  textSize(30);
-  text(gamePoints + " points", 0, map(0.55, 0, 1, -height / 2, height / 2));
-
-  let msg1 = '<p> or <long press> to continue';
-  let msg2 = '<r> or <device shake> to toggle screen rotation';
-  
-  textSize(20);
-  text(msg1 + '\n' + msg2, 0, map(0.85, 0, 1, -height / 2, height / 2));
-
-}
-
-function drawGame() {
-
-  // start screen rotation
-  push();
-  rotate(HALF_PI * gameOrientation * allowScreenRotation);
-
-  // background blocks
-  stroke(50);
-  strokeWeight(3);
-  for (let x = 0; x < NWIDTH; x++) {
-    for (let y = 0; y < NHEIGHT; y++) {
-      fill(matrixBackground[x][y]);
-      rect(xOffCanvas + x * blockSize, yOffCanvas + y * blockSize, blockSize, blockSize);
+    for (let i = 0; i < 3; i++) {
+        slider = createSlider(-180, 180, random(-180, 180));
+        slider.position(30 + 160 * i, 60);
+        slider.style('width', '120px');
+        ringSliders.push(slider);
     }
-  }
 
-  // background border
-  noFill();
-  stroke(200);
-  strokeWeight(3);
-  rect(xOffCanvas, yOffCanvas, blockSize * NWIDTH, blockSize * NHEIGHT);
-
-  // draw shadow
-  for (let x = 0; x < NWIDTH; x++) {
-    for (let y = 0; y < NHEIGHT; y++) {
-      if (matrix[x][y] == (type + 10)) {
-        let z = y + 1;
-        while (z < NHEIGHT && matrix[x][z] == 0) {
-          z++;
+    for (let i = 0; i < 3; i++) {
+        let ringRaySliders = [];
+        for (let j = 0; j < 3; j++) {
+            slider = createSlider(-45, 45, random(-15, 15));
+            slider.position(30 + 160 * i, 80 + 20 * (j + 1));
+            slider.style('width', '120px');
+            slider.addClass('ray-slider slider-' + rayColors[j]);
+            ringRaySliders.push(slider);
         }
-        noStroke();
-        fill(255, map(y, 0, NHEIGHT, 150, 70));
-        rect(xOffCanvas + x * blockSize, yOffCanvas + y * blockSize, blockSize, blockSize * (z - y));
-      }
+        raySliders.push(ringRaySliders);
     }
-  }
 
-  // draw matrix blocks
-  for (let x = 0; x < NWIDTH; x++) {
-    for (let y = 0; y < NHEIGHT; y++) {
-      let blockType = matrix[x][y];
-      if (blockType == (type + 10)) { blockType = type; }
-
-      if (blockType >= I && blockType <= S) {
-        fill(getColor(blockType));
-        strokeWeight(3);
-        stroke(200);
-        rect(xOffCanvas + x * blockSize, yOffCanvas + y * blockSize, blockSize, blockSize);
-      }
-
-    }
-  }
-
-  // draw next block
-  let xNext = getBlockX(typeNext);
-  let yNext = getBlockY(typeNext);
-  let blockSizeNext = blockSize * 0.5;
-  fill(getColor(typeNext));
-  for (let i = 0; i < 4; i ++) {
-    strokeWeight(2);
-    stroke(200);
-    let xOff = xOffCanvas + blockSizeNext;
-    let yOff = yOffCanvas + blockSizeNext;
-
-    rect(xOff + xNext[i] * blockSizeNext,
-      yOff + yNext[i] * blockSizeNext,
-      blockSizeNext,
-      blockSizeNext);
-  }
-
-  pop();
-  // finish screen rotation
+    shapePoints.push(createVector(40, 20));
+    shapePoints.push(createVector(-15, -50));
+    shapePoints.push(createVector(-30, 60));
 
 }
+
 
 function draw() {
-  background('black');
+    background('white');
 
-  translate(width / 2, height / 2);
-  scale(0.9);
-
-  drawGame();
-
-  if (gameState == RUNNING) {
-    updateGame();
-  }
-  else if (gameState == PAUSE) {
-    displayMessage('PAUSED');
-  } else if (gameState == GAME_OVER) {
-    displayMessage('GAME\nOVER');
-  }
-
-}
-
-function getColor(blockType) {
-  if      (blockType == I) { return 'cyan';   }
-  else if (blockType == O) { return 'yellow'; }
-  else if (blockType == T) { return 'purple'; }
-  else if (blockType == L) { return 'orange'; }
-  else if (blockType == J) { return 'blue';   }
-  else if (blockType == Z) { return 'red';    }
-  else if (blockType == S) { return 'green';  }
-  else { return false; }
-
-}
-
-function startGame() {
-
-  gameState = RUNNING;
-  gameOrientation = 0;
-  gamePoints = 0;
-
-  allowScreenRotation = false;
-
-  lineCount = 0;
-  timeDelayInSeconds = 1.0;
-
-  typeNext = ceil(random(I - 1, S));
-
-  for (let x = 0; x < NWIDTH; x++) {
-    matrixBackground[x] = [];
-    for (let y = 0; y < NHEIGHT; y++) {
-      matrixBackground[x][y] = round(random(0, map(y, 0, NHEIGHT, 0, 100)));
+    for (let i = 0; i < 3; i++) {
+        fill('orange');
+        stroke('black');
+        strokeWeight(2);
+        text('Ring ' + str(i + 1), 30 + 160 * i, 50);
     }
-  }
 
-  for (let x = 0; x < NWIDTH; x++) {
-    matrix[x] = [];
-    for (let y = 0; y < NHEIGHT; y++) {
-      matrix[x][y] = 0;
+    translate(width / 2, height / 2);
+
+    fill(200);
+    stroke(0);
+    strokeWeight(lineWidth / 2);
+    beginShape();
+    for (let i = 0; i < 3; i++) {
+        let corner = shapePoints[i];
+        vertex(corner.x, corner.y);
     }
-  }
-  createBlock();
+    endShape(CLOSE);
 
-}
-
-function getBlockX(blockType) {
-
-  let x = [];
-  if (blockType == I) { x = [0, 1, 2, 3]; }
-  if (blockType == O) { x = [0, 1, 0, 1]; }
-  if (blockType == T) { x = [0, 1, 2, 1]; }
-  if (blockType == L) { x = [0, 1, 2, 0]; }
-  if (blockType == J) { x = [0, 1, 2, 2]; }
-  if (blockType == Z) { x = [0, 1, 1, 2]; }
-  if (blockType == S) { x = [1, 2, 0, 1]; }
-
-  return x;
-
-}
-
-function getBlockY(blockType) {
-
-  let y = [];
-  if (blockType == I) { y = [0, 0, 0, 0]; }
-  if (blockType == O) { y = [0, 0, 1, 1]; }
-  if (blockType == T) { y = [0, 0, 0, 1]; }
-  if (blockType == L) { y = [0, 0, 0, 1]; }
-  if (blockType == J) { y = [0, 0, 0, 1]; }
-  if (blockType == Z) { y = [0, 0, 1, 1]; }
-  if (blockType == S) { y = [0, 0, 1, 1]; }
-
-  return y;
-
-}
-
-function createBlock() {
-
-  // assimilate previous active blocks
-  for (let x = 0; x < NWIDTH; x++) {
-    for (let y = 0; y < NHEIGHT; y++) {
-      if (matrix[x][y] == (type + 10)) {
-        matrix[x][y] = type;
-      }
+    for (let i = 0; i < 3; i++) {
+        let corner = shapePoints[i];
+        fill(rayColors[i]);
+        ellipse(corner.x, corner.y, dotSize, dotSize);
     }
-  }
 
-  type = typeNext;
-  typeNext = ceil(random(I - 1, S));
+    noFill();
+    stroke('orange');
+    strokeWeight(ringWidth);
+    circle(0, 0, ringRadius * 2);
 
-  let x = getBlockX(type);
-  let y = getBlockY(type);
-
-  let xOff = 3;
-  if (type == I) { xOff = 4; }
-  if (type == O) { xOff = 2; }
-  /*if (type == T || type == L || type == J || type == Z || type == S) {
-    xOff = 3;
-  }*/
-
-  xOff = round((NWIDTH - xOff) / 2);
-
-  count = 0;
-  for (let i = 0; i < 4; i++) {
-    if (matrix[x[i] + xOff][y[i]] == 0) {
-      count++;
-    }
-  }
-
-  if (count == 4) {
-    for (let i = 0; i < 4; i++) {
-      matrix[x[i] + xOff][y[i]] = type + 10;
-    }
-  }
-
-}
-
-function move(direction) {
-
-  let xOff = 0;
-  let yOff = 0;
-
-  if (direction == LEFT)  { xOff = -1; }
-  if (direction == RIGHT) { xOff =  1; }
-  if (direction == DOWN)  { yOff =  1; }
-
-  moveWithOffset(xOff, yOff, false);
-
-}
-
-function moveWithOffset(xOff, yOff, rotationMode) {
-
-  let xOld = [0, 0, 0, 0];
-  let yOld = [0, 0, 0, 0];
-
-  let xNew = [0, 0, 0, 0];
-  let yNew = [0, 0, 0, 0];
-
-  countOld = count;
-  count = 0;
-
-  for (let x = 0; x < NWIDTH; x++) {
-    for (let y = 0; y < NHEIGHT; y++) {
-      if (matrix[x][y] == (type + 10)) {
-        xOld[count] = x;
-        yOld[count] = y;
-        if (!rotationMode) {
-          xNew[count] = xOff + x;
-          yNew[count] = yOff + y;
-        } else {
-          xNew[count] = xOff - y;
-          yNew[count] = yOff + x;
+    for (let i = 0; i < 3; i++) {
+        let ringRaySliders = raySliders[i];
+        let ringAngle = deg2rad(ringSliders[i].value());
+        rotate(ringAngle);
+        for (let j = 0; j < 3; j++) {
+            drawRay(ringRaySliders[j].value(), rayColors[j]);
         }
-        if (xNew[count] >= 0 && xNew[count] < NWIDTH && yNew[count] >= 0 && yNew[count] < NHEIGHT) {
-          let v = matrix[xNew[count]][yNew[count]];
-          if (v == 0 || v == (type + 10)) {
-            count++;
-          }
-        }
-      }
+        rotate(-ringAngle);
     }
-  }
-
-  if (count == 4) {
-    for (let i = 0; i < 4; i++) {
-      matrix[xOld[i]][yOld[i]] = 0;
-    }
-
-    for (let i = 0; i < 4; i++) {
-      matrix[xNew[i]][yNew[i]] = (type + 10);
-    }
-
-    if (rotationMode && allowScreenRotation) {
-      gameOrientation = (gameOrientation + 1) % 4;
-    }
-
-  }
 
 }
 
-function turn() {
+function deg2rad(angle) {
+    return angle / 180 * PI;
+}
 
-  let xmin = NWIDTH;
-  let ymin = NHEIGHT;
-  let xmax = 0;
-  let ymax = 0;
 
-  for (let x = 0; x < NWIDTH; x++) {
-    for (let y = 0; y < NHEIGHT; y++) {
-      if (matrix[x][y] == (type + 10)) {
-        if (x < xmin) { xmin = x; }
-        if (x > xmax) { xmax = x; }
-        if (y < ymin) { ymin = y; }
-        if (y > ymax) { ymax = y; }
-      }
-    }
-  }
+function drawRay(angle, color) {
 
-  let xOff = xmin + ymax;
-  let yOff = ymin - xmin;
+    let p1 = createVector(- ringRadius - focalLength, 0);
+    let p2 = createVector(cos(deg2rad(angle)), sin(deg2rad(angle))).mult(ringRadius);
+    let p3 = p5.Vector.add(p1, p2);
+    let ip = intersectLineCircle(p1, p3, createVector(0, 0), ringRadius);
 
-  moveWithOffset(xOff, yOff, true);
+    stroke('black');
+    strokeWeight(lineWidth);
+    line(ip[0].x, ip[0].y, ip[1].x, ip[1].y);
+    line(p1.x, p1.y, p3.x, p3.y);
+
+    stroke(color);
+    strokeWeight(lineWidth - 3);
+    line(ip[0].x, ip[0].y, ip[1].x, ip[1].y);
+    line(p1.x, p1.y, p3.x, p3.y);
+
+    ellipseMode(CENTER);
+    stroke('black');
+    strokeWeight(1.5);
+    fill(color);
+
+    ellipse(ip[0].x, ip[0].y, dotSize, dotSize);
+    ellipse(ip[1].x, ip[1].y, dotSize, dotSize);
+    fill('yellow');
+    ellipse(p1.x, p1.y, dotSize, dotSize);
 
 }
 
-function updateGame() {
+intersectLineCircle = function (p1, p2, cpt, r) {
 
-  if (frameCount % round(getFrameRate() * timeDelayInSeconds * 2) == 0) {
-    for (let x = 0; x < NWIDTH; x++) {
-      matrixBackground[x] = [];
-      for (let y = 0; y < NHEIGHT; y++) {
-        matrixBackground[x][y] = round(random(0, map(y, 0, NHEIGHT, 0, 100)));
-      }
+    let sign = function (x) { return x < 0.0 ? -1 : 1; };
+
+    let x1 = p1.copy().sub(cpt);
+    let x2 = p2.copy().sub(cpt);
+
+    let dv = x2.copy().sub(x1)
+    let dr = dv.mag();
+    let D = x1.x * x2.y - x2.x * x1.y;
+
+    // evaluate if there is an intersection
+    let di = r * r * dr * dr - D * D;
+    if (di < 0.0)
+        return [];
+
+    let t = sqrt(di);
+
+    ip = [];
+    ip.push(new createVector(D * dv.y + sign(dv.y) * dv.x * t, -D * dv.x + abs(dv.y) * t).div(dr * dr).add(cpt));
+    if (di > 0.0) {
+        ip.push(new createVector(D * dv.y - sign(dv.y) * dv.x * t, -D * dv.x - abs(dv.y) * t).div(dr * dr).add(cpt));
     }
-
-  }
-
-
-  for (let y = NHEIGHT - 1; y >= 0; y--) {
-    let ycount = 0;
-    for (let x = 0; x < NWIDTH; x++) {
-      if (matrix[x][y] >= I && matrix[x][y] <= S) {
-        ycount++;
-      }
-    }
-
-    if (ycount == NWIDTH) {
-
-      lineCount++;
-      gamePoints = round(gamePoints * 1.10);
-
-      for (let x = 0; x < NWIDTH; x++) {
-        if (matrix[x][y] >= I && matrix[x][y] <= S) {
-          matrix[x][y] = 0;
-        }
-      }
-      for (let z = y - 1; z >= 0; z--) {
-        for (let x = 0; x < NWIDTH; x++) {
-          if (matrix[x][z] >= I && matrix[x][z] <= S) {
-              matrix[x][z + 1] = matrix[x][z];
-              matrix[x][z] = 0;
-          }
-        }
-      }
-
-      y++;
-
-    }
-
-  }
-
-  // every 5 lines or every 5 seconds
-  if (lineCount >= 5 || frameCount % round(getFrameRate() * 5) == 0) {
-    lineCount = 0;
-    timeDelayInSeconds = timeDelayInSeconds * 0.95;
-  }
-
-
-  if (frameCount % round(getFrameRate() * timeDelayInSeconds) == 0) {
-
-    gamePoints++;
-
-    move(DOWN);
-    if (countOld < 4 && count < 4) {
-      createBlock();
-      if (count < 4) {
-          gameState = GAME_OVER;
-      }
-    }
-
-  }
-
-
-  if (keyIsDown(LEFT_ARROW)) {
-    if ( gameOrientation == 0 ) { move(LEFT);  }
-    if ( gameOrientation == 1 ) { move(DOWN);  }
-    if ( gameOrientation == 2 ) { move(RIGHT); }
-    if ( gameOrientation == 3 ) {              }
-  }
-  if (keyIsDown(RIGHT_ARROW)) {
-    if ( gameOrientation == 2 ) { move(LEFT);  }
-    if ( gameOrientation == 3 ) { move(DOWN);  }
-    if ( gameOrientation == 0 ) { move(RIGHT); }
-    if ( gameOrientation == 1 ) {              }
-  }
-  if (keyIsDown(UP_ARROW)) {
-    if ( gameOrientation == 1 ) { move(LEFT);  }
-    if ( gameOrientation == 2 ) { move(DOWN);  }
-    if ( gameOrientation == 3 ) { move(RIGHT); }
-    if ( gameOrientation == 0 ) {              }
-  }
-  if (keyIsDown(DOWN_ARROW)) {
-    if ( gameOrientation == 3 ) { move(LEFT);  }
-    if ( gameOrientation == 0 ) { move(DOWN);  }
-    if ( gameOrientation == 1 ) { move(RIGHT); }
-    if ( gameOrientation == 2 ) {              }
-  }
-
-}
-
-function keyTyped() {
-  let ROTATE_KEY = ' ';
-  let PAUSE_KEY = 'p';
-  let ROTATION_KEY = 'r';
-
-  if (key === ROTATE_KEY) {
-    turn();
-  }
-  else if (key === PAUSE_KEY) {
-    changeGameState();
-  }
-  else if (key === ROTATION_KEY) {
-    toggleScreenRotation();
-  }
-  return false;
-
-}
-
-function toggleScreenRotation() {
-
-  allowScreenRotation = !allowScreenRotation;
-  if (!allowScreenRotation) {
-    gameOrientation = 0;
-  }
-
-}
-
-function changeGameState() {
-
-  if (gameState == PAUSE) {
-    gameState = RUNNING;
-  
-  } else if (gameState == GAME_OVER) {
-    startGame();
-  
-  } else if (gameState == RUNNING) {
-    gameState = PAUSE;
-  
-  }
-
-}
-
-function setupGestures() {
-  // set options to prevent default behaviors for swipe, pinch, etc
-  let options = { preventDefault: true };
-
-  // document.body registers gestures anywhere on the page
-  let hammer = new Hammer(document.body, options);
-
-  hammer.on('swipe tap press', onGesture);
-  hammer.get('swipe').set({ direction: Hammer.DIRECTION_ALL });
-  hammer.get('tap').set({ taps: 1 });
-
-}
-
-function onGesture(event) {
-
-  if (event.type === "swipe" && gameState == RUNNING) {
-    if (event.direction ==  LEFT_SWIPE ) {
-      if ( gameOrientation == 0 ) { move(LEFT);  }
-      if ( gameOrientation == 1 ) { move(DOWN);  }
-      if ( gameOrientation == 2 ) { move(RIGHT); }
-      if ( gameOrientation == 3 ) {              }
-    }
-    if (event.direction ==  RIGHT_SWIPE ) {
-      if ( gameOrientation == 2 ) { move(LEFT);  }
-      if ( gameOrientation == 3 ) { move(DOWN);  }
-      if ( gameOrientation == 0 ) { move(RIGHT); }
-      if ( gameOrientation == 1 ) {              }
-    }
-    if (event.direction ==  UP_SWIPE ) {
-      if ( gameOrientation == 1 ) { move(LEFT);  }
-      if ( gameOrientation == 2 ) { move(DOWN);  }
-      if ( gameOrientation == 3 ) { move(RIGHT); }
-      if ( gameOrientation == 0 ) {              }
-    }
-    if (event.direction ==  DOWN_SWIPE ) {
-      if ( gameOrientation == 3 ) { move(LEFT);  }
-      if ( gameOrientation == 0 ) { move(DOWN);  }
-      if ( gameOrientation == 1 ) { move(RIGHT); }
-      if ( gameOrientation == 2 ) {              }
-    }
-
-  } else if (event.type === "tap") {
-    turn();
-
-  } else if (event.type === "press") {
-    changeGameState();
-
-  }
-}
-
-function deviceShaken() {
-
-  toggleScreenRotation();
-
+    return ip;
 }
