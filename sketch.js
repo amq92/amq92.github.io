@@ -95,7 +95,6 @@ function draw() {
         let ringRaySliders = raySliders[i];
         let ringAngle = deg2rad(ringSliders[i].value());
         for (let j = 0; j < nbRays; j++) {
-            // let positions = getRayPosition(ringAngle, solveRingPosition(ringAngle, shapePoints[j]));
             let positions = getRayPosition(ringAngle, deg2rad(ringRaySliders[j].value()));
             drawRay(positions, rayColors[j]);
         }
@@ -109,7 +108,6 @@ function solveRings() {
         let ringAngle = deg2rad(ringSliders[i].value());
         for (let j = 0; j < nbRays; j++) {
             let a = rad2deg(solveRingPosition(ringAngle, shapePoints[j]));
-            console.log(j, '>', a);
             ringRaySliders[j].value(a);
         }
     }
